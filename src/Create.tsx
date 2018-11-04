@@ -14,7 +14,7 @@ export default class Create extends React.Component {
         {this.state.errorMessage ? (
           <Error
             message={this.state.errorMessage}
-            //onClick={this.dismissError}
+            onClick={this.dismissError}
           />
         ) : null}
         <Input type="textarea" name="foobar" onChange={this.handleChange} />
@@ -24,12 +24,12 @@ export default class Create extends React.Component {
       </div>
     );
   }
-  readonly dismissError = (event: any) => {
+  readonly dismissError = (event: any & void) => {
     this.setState({ errorMessage: '' });
   };
   readonly submitSecret = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (this.state.secret === '') return;
-    this.setState({ errorMessage: 'foobarb' });
+    this.setState({ errorMessage: 'fail' });
   };
 
   readonly handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,6 +37,10 @@ export default class Create extends React.Component {
   };
 }
 
-const Error = (props: { readonly message: string }) => (
-  <Alert color="danger">{props.message}</Alert>
+const Error = (
+  props: { readonly message: string } & React.HTMLAttributes<HTMLElement>,
+) => (
+  <Alert color="danger" {...props}>
+    {props.message}
+  </Alert>
 );
