@@ -6,8 +6,6 @@ import Create from './Create';
 const About = () => <h2>About</h2>;
 const Users = () => <h2>Users</h2>;
 
-// const Foo = (props: { readonly name: string }) => <div>hej {props.name}</div>;
-
 class App extends React.Component {
   public render() {
     return (
