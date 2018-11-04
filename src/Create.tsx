@@ -19,7 +19,7 @@ export default class Create extends React.Component {
       </div>
     );
   }
-  readonly dismissError = (event: any & void) => {
+  readonly dismissError = () => {
     this.setState({ errorMessage: '' });
   };
   readonly submitSecret = (event: React.MouseEvent<HTMLButtonElement>) => {
