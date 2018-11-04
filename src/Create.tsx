@@ -11,12 +11,7 @@ export default class Create extends React.Component {
   public render() {
     return (
       <div>
-        {this.state.errorMessage ? (
-          <Error
-            message={this.state.errorMessage}
-            onClick={this.dismissError}
-          />
-        ) : null}
+        <Error message={this.state.errorMessage} onClick={this.dismissError} />
         <Input type="textarea" name="foobar" onChange={this.handleChange} />
         <Button color="primary" onClick={this.submitSecret}>
           hello
@@ -39,8 +34,9 @@ export default class Create extends React.Component {
 
 const Error = (
   props: { readonly message: string } & React.HTMLAttributes<HTMLElement>,
-) => (
-  <Alert color="danger" {...props}>
-    {props.message}
-  </Alert>
-);
+) =>
+  props.message ? (
+    <Alert color="danger" {...props}>
+      {props.message}
+    </Alert>
+  ) : null;
