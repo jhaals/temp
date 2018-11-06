@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Button, Input } from 'reactstrap';
 import * as sjcl from 'sjcl';
 
@@ -66,11 +66,11 @@ const CreateResult = (
   useEffect(
     () => {
       fetch('https://api.yopass.se/secret', {
-        method: 'POST',
         body: JSON.stringify({
-          secret: props.payload,
           expiration: parseInt('3600', 10),
+          secret: props.payload,
         }),
+        method: 'POST',
       }).then(r => {
         setResult(r.statusText);
       });
