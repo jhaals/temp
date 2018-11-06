@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, Button, Input } from 'reactstrap';
 import * as sjcl from 'sjcl';
 
@@ -62,8 +62,22 @@ const Loading = (
 const CreateResult = (
   props: { readonly payload: string } & React.HTMLAttributes<HTMLElement>,
 ) => {
-  //TODO: do fetch
-  return <div>{props.payload}</div>;
+  const [result, setResult] = useState('');
+  useEffect(
+    () => {
+      fetch('https://api.yopass.se/secret', {
+        method: 'POST',
+        body: JSON.stringify({
+          secret: props.payload,
+          expiration: parseInt('3600', 10),
+        }),
+      }).then(r => {
+        setResult(r.statusText);
+      });
+    },
+    [props.payload],
+  );
+  return <h1 {...props}>{result}</h1>;
 };
 
 export default Create;
