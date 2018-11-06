@@ -1,7 +1,10 @@
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+// @ts-ignore
+import { Suspense, lazy } from 'react';
+import { useState } from 'react';
 import { Alert, Button, Input } from 'reactstrap';
 import * as sjcl from 'sjcl';
+const CreateResult = lazy(() => import('./CreateResult'));
 
 const Create = () => {
   const [secret, setSecret] = useState('');
@@ -41,7 +44,11 @@ const Create = () => {
         Encrypt Message
       </Button>
       <Loading show={loading} />
-      {payload ? <CreateResult payload={payload} /> : null}
+      {payload ? (
+        <Suspense fallback={<Loading show={true} />}>
+          <CreateResult payload={payload} />
+        </Suspense>
+      ) : null}
     </div>
   );
 };
@@ -58,26 +65,5 @@ const Error = (
 const Loading = (
   props: { readonly show: boolean } & React.HTMLAttributes<HTMLElement>,
 ) => (props.show ? <h2>Loading</h2> : null);
-
-const CreateResult = (
-  props: { readonly payload: string } & React.HTMLAttributes<HTMLElement>,
-) => {
-  const [result, setResult] = useState('');
-  useEffect(
-    () => {
-      fetch('https://api.yopass.se/secret', {
-        body: JSON.stringify({
-          expiration: parseInt('3600', 10),
-          secret: props.payload,
-        }),
-        method: 'POST',
-      }).then(r => {
-        setResult(r.statusText);
-      });
-    },
-    [props.payload],
-  );
-  return <h1 {...props}>{result}</h1>;
-};
 
 export default Create;
