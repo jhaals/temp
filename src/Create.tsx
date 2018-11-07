@@ -1,26 +1,12 @@
 import * as React from 'react';
 // @ts-ignore
 import { Suspense, lazy } from 'react';
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { Alert, Button, Input } from 'reactstrap';
 import * as sjcl from 'sjcl';
 const CreateResult = lazy(() => import('./CreateResult'));
 
 const Create = () => {
-  const [secret, setSecret] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [password, setPassword] = useState('');
-  const [payload, setPayload] = useState('');
-  const loading = false;
-
-  const submitSecret = (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (secret === '') {
-      return;
-    }
-    setPassword(randomString());
-    setPayload(sjcl.encrypt(password, secret).toString());
-  };
-
   const randomString = () => {
     let text = '';
     const possible =
@@ -31,22 +17,68 @@ const Create = () => {
     return text;
   };
 
+  const reducer = (state: any, action: any) => {
+    switch (action.type) {
+      case 'SECRET_UPDATE':
+        return {
+          ...state,
+          secret: action.value,
+        };
+      case 'PAYLOAD_UPDATE':
+        return {
+          ...state,
+          payload: action.value,
+        };
+      case 'CLEAR_ERROR':
+        return {
+          ...state,
+          errorMessage: '',
+        };
+      case 'SUBMIT_SECRET':
+        if (state.secret === '') {
+          return state;
+        }
+        const pw = randomString();
+        return {
+          ...state,
+          password: pw,
+          payload: sjcl.encrypt(pw, state.secret).toString(),
+        };
+      default:
+        return state;
+    }
+  };
+  const [state, dispatch] = useReducer(reducer, {
+    secret: '',
+    payload: '',
+    errorMessage: 'test',
+    loading: false,
+  });
+
   return (
     <div>
-      <Error message={errorMessage} onClick={() => setErrorMessage('')} />
+      <Error
+        message={state.errorMessage}
+        onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
+      />
       <Input
         type="textarea"
         name="secret"
-        onChange={e => setSecret(e.target.value)}
-        value={secret}
+        onChange={e =>
+          dispatch({ type: 'SECRET_UPDATE', value: e.target.value })
+        }
+        value={state.secret}
       />
-      <Button onClick={submitSecret} color="primary">
+      <Button
+        onClick={() => dispatch({ type: 'SUBMIT_SECRET' })}
+        color="primary"
+      >
         Encrypt Message
       </Button>
-      <Loading show={loading} />
-      {payload ? (
+      <Loading show={state.loading} />
+      {state.payload ? (
         <Suspense fallback={<Loading show={true} />}>
-          <CreateResult payload={payload} />
+          <CreateResult payload={state.payload} />
         </Suspense>
       ) : null}
     </div>
