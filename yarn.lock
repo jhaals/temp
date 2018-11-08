@@ -3071,6 +3071,13 @@ fb-watchman@^2.0.0:
   dependencies:
     bser "^2.0.0"
 
+fetch-suspense@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/fetch-suspense/-/fetch-suspense-1.0.1.tgz#da9ac59f11a9ebc7529275adfcd221108544c273"
+  integrity sha512-6PDKlt+UByT/xeT0Ng/3RAauHwpo0kSB0w+09oRH6EOC4f+HAf9mY2WaE5NNoNWet3jn4xQSkLLt6AdXAB/PxA==
+  dependencies:
+    deep-equal "^1.0.1"
+
 figures@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/figures/-/figures-2.0.0.tgz#3ab1a2d2a62c8bfb431a0c94cb797a2fce27c962"
