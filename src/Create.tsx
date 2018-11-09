@@ -1,5 +1,3 @@
-// @ts-ignore
-import useFetch from 'fetch-suspense';
 import * as React from 'react';
 // @ts-ignore
 import { Suspense } from 'react';
@@ -13,10 +11,6 @@ type Action =
       value: string;
     }
   | {
-      type: 'PAYLOAD_UPDATE';
-      value: string;
-    }
-  | {
       type: 'CLEAR_ERROR';
     }
   | {
@@ -25,18 +19,52 @@ type Action =
 
 interface State {
   secret: string;
-  payload: string;
   errorMessage: string;
   password?: string;
   loading: boolean;
+  url: string;
 }
+
+const reducer = async (state: State, action: Action) => {
+  switch (action.type) {
+    case 'SECRET_UPDATE':
+      return {
+        ...state,
+        secret: action.value,
+      };
+    case 'CLEAR_ERROR':
+      return {
+        ...state,
+        errorMessage: '',
+      };
+    case 'SUBMIT_SECRET':
+      if (state.secret === '') {
+        return state;
+      }
+      const pw = randomString();
+
+      const foo = await fetch('https://api.yopass.se/secret', {
+        body: JSON.stringify({
+          expiration: parseInt('3600', 10),
+          secret: sjcl.encrypt(pw, state.secret).toString(),
+        }),
+        method: 'POST',
+      });
+
+      return {
+        ...state,
+        password: pw,
+        url: foo.statusText,
+      };
+  }
+};
 
 const Create = () => {
   const [state, dispatch] = useReducer<State, Action>(reducer, {
-    errorMessage: 'dsfsdf',
+    errorMessage: '',
     loading: false,
-    payload: '',
     secret: '',
+    url: '',
   });
 
   return (
@@ -60,11 +88,7 @@ const Create = () => {
         Encrypt Message
       </Button>
       <Loading show={state.loading} />
-      {state.payload ? (
-        <Suspense fallback={<Loading show={true} />}>
-          <CreateResult payload={state.payload} />
-        </Suspense>
-      ) : null}
+      <CreateResult url={state.url} />
     </div>
   );
 };
@@ -82,47 +106,10 @@ const Loading = (
   props: { readonly show: boolean } & React.HTMLAttributes<HTMLElement>,
 ) => (props.show ? <h2>Loading</h2> : null);
 
-const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case 'SECRET_UPDATE':
-      return {
-        ...state,
-        secret: action.value,
-      };
-    case 'PAYLOAD_UPDATE':
-      return {
-        ...state,
-        payload: action.value,
-      };
-    case 'CLEAR_ERROR':
-      return {
-        ...state,
-        errorMessage: '',
-      };
-    case 'SUBMIT_SECRET':
-      if (state.secret === '') {
-        return state;
-      }
-      const pw = randomString();
-      return {
-        ...state,
-        password: pw,
-        payload: sjcl.encrypt(pw, state.secret).toString(),
-      };
-  }
-};
-
 const CreateResult = (
-  props: { readonly payload: string } & React.HTMLAttributes<HTMLElement>,
+  props: { readonly url: string } & React.HTMLAttributes<HTMLElement>,
 ) => {
-  const data = useFetch('https://api.yopass.se/secret', {
-    body: JSON.stringify({
-      expiration: parseInt('3600', 10),
-      secret: props.payload,
-    }),
-    method: 'POST',
-  });
-  return <h1 {...props}>{data}</h1>;
+  return <h1 {...props}>{props.url}</h1>;
 };
 
 const randomString = () => {
