@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { useReducer } from 'react';
 import { Alert, Button, Input } from 'reactstrap';
 import * as sjcl from 'sjcl';
+import Result from './Result';
 
 type Action =
   | {
@@ -11,84 +12,130 @@ type Action =
       value: string;
     }
   | {
-      type: 'CLEAR_ERROR';
+      type: 'ERROR_CLEAR';
     }
   | {
-      type: 'SUBMIT_SECRET';
+      type: 'LOADING';
+      isLoading: boolean;
+    }
+  | {
+      type: 'ERROR_SET';
+      error: string;
+    }
+  | {
+      type: 'DISPLAY_RESULT';
+      uuid: string;
+      password: string;
     };
 
 interface State {
   secret: string;
   errorMessage: string;
-  password?: string;
+  password: string;
   loading: boolean;
-  url: string;
+  uuid: string;
+  backendDomain: string;
 }
 
-const reducer = async (state: State, action: Action) => {
+const reducer = (state: State, action: Action) => {
   switch (action.type) {
     case 'SECRET_UPDATE':
       return {
         ...state,
         secret: action.value,
       };
-    case 'CLEAR_ERROR':
+    case 'DISPLAY_RESULT':
+      return {
+        ...state,
+        password: action.password,
+        uuid: action.uuid,
+      };
+    case 'LOADING':
+      return {
+        ...state,
+        loading: action.isLoading,
+      };
+    case 'ERROR_CLEAR':
       return {
         ...state,
         errorMessage: '',
       };
-    case 'SUBMIT_SECRET':
-      if (state.secret === '') {
-        return state;
-      }
-      const pw = randomString();
+    case 'ERROR_SET':
+      return {
+        ...state,
+        errorMessage: action.error,
+      };
+  }
+};
 
-      const foo = await fetch('https://api.yopass.se/secret', {
+const Create = () => {
+  // const [secret, setSecret] = useState('');
+  const [state, dispatch] = useReducer<State, Action>(reducer, {
+    backendDomain: 'http://localhost:1337',
+    errorMessage: '',
+    loading: false,
+    password: '',
+    secret: '',
+    uuid: '',
+  });
+
+  const submit = async () => {
+    if (state.secret === '') {
+      return;
+    }
+    // Dispatch loading
+    dispatch({ type: 'LOADING', isLoading: true });
+    try {
+      const pw = randomString();
+      const request = await fetch(`${state.backendDomain}/secret`, {
         body: JSON.stringify({
           expiration: parseInt('3600', 10),
           secret: sjcl.encrypt(pw, state.secret).toString(),
         }),
         method: 'POST',
       });
-
-      return {
-        ...state,
+      const data = await request.json();
+      dispatch({
         password: pw,
-        url: foo.statusText,
-      };
-  }
-};
+        type: 'DISPLAY_RESULT',
+        uuid: data.message,
+      });
+    } catch (e) {
+      dispatch({ type: 'ERROR_SET', error: e.message });
+    }
+    dispatch({ type: 'LOADING', isLoading: false });
+  };
 
-const Create = () => {
-  const [state, dispatch] = useReducer<State, Action>(reducer, {
-    errorMessage: '',
-    loading: false,
-    secret: '',
-    url: '',
-  });
+  const Form = () => {
+    return (
+      <div>
+        <Input
+          type="textarea"
+          name="secret"
+          onChange={e =>
+            dispatch({ type: 'SECRET_UPDATE', value: e.target.value })
+          }
+          value={state.secret}
+        />
+        <Button onClick={() => submit()} color="primary">
+          Encrypt Message
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div>
       <Error
         message={state.errorMessage}
-        onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
+        onClick={() => dispatch({ type: 'ERROR_CLEAR' })}
       />
-      <Input
-        type="textarea"
-        name="secret"
-        onChange={e =>
-          dispatch({ type: 'SECRET_UPDATE', value: e.target.value })
-        }
-        value={state.secret}
-      />
-      <Button
-        onClick={() => dispatch({ type: 'SUBMIT_SECRET' })}
-        color="primary"
-      >
-        Encrypt Message
-      </Button>
       <Loading show={state.loading} />
-      <CreateResult url={state.url} />
+      {state.uuid ? (
+        <Result uuid={state.uuid} password={state.password} />
+      ) : (
+        <Form />
+      )}
     </div>
   );
 };
@@ -105,12 +152,6 @@ const Error = (
 const Loading = (
   props: { readonly show: boolean } & React.HTMLAttributes<HTMLElement>,
 ) => (props.show ? <h2>Loading</h2> : null);
-
-const CreateResult = (
-  props: { readonly url: string } & React.HTMLAttributes<HTMLElement>,
-) => {
-  return <h1 {...props}>{props.url}</h1>;
-};
 
 const randomString = () => {
   let text = '';
