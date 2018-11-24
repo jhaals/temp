@@ -1,3 +1,4 @@
+import * as ClipboardJS from 'clipboard';
 import * as React from 'react';
 import { Button, Col, FormGroup, Input, Label } from 'reactstrap';
 
@@ -32,6 +33,11 @@ const CopyField = (
     readonly value: string;
   } & React.HTMLAttributes<HTMLElement>,
 ) => {
+  // @ts-ignore
+  const clip = new ClipboardJS(`#${props.name}-b`, {
+    target: () => document.getElementById(`${props.name}-i`),
+  });
+
   return (
     <FormGroup>
       <Label>{props.label}</Label>
