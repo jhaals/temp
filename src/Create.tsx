@@ -1,7 +1,5 @@
 import * as React from 'react';
-// @ts-ignore
-import { Suspense } from 'react';
-import { useReducer, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Button,
@@ -14,52 +12,17 @@ import {
 import * as sjcl from 'sjcl';
 import Result from './Result';
 
-type Action =
-  | {
-      type: 'SECRET_UPDATE';
-      value: string;
-    }
-  | {
-      type: 'DISPLAY_RESULT';
-      uuid: string;
-      password: string;
-    };
-
-interface State {
-  secret: string;
-  password: string;
-  uuid: string;
-}
-
-const reducer = (state: State, action: Action) => {
-  switch (action.type) {
-    case 'SECRET_UPDATE':
-      return {
-        ...state,
-        secret: action.value,
-      };
-    case 'DISPLAY_RESULT':
-      return {
-        ...state,
-        password: action.password,
-        uuid: action.uuid,
-      };
-  }
-};
-
 const Create = () => {
   const [expiration, setExpiration] = useState('3600');
   const [error, setError] = useState('');
+  const [secret, setSecret] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uuid, setUUID] = useState('');
+  const [password, setPassword] = useState('');
   const BACKEND_DOMAIN = 'http://localhost:1337';
-  const [state, dispatch] = useReducer<State, Action>(reducer, {
-    password: '',
-    secret: '',
-    uuid: '',
-  });
 
   const submit = async () => {
-    if (state.secret === '') {
+    if (secret === '') {
       return;
     }
     setLoading(true);
@@ -69,7 +32,7 @@ const Create = () => {
       const request = await fetch(`${BACKEND_DOMAIN}/secret`, {
         body: JSON.stringify({
           expiration: parseInt(expiration, 10),
-          secret: sjcl.encrypt(pw, state.secret).toString(),
+          secret: sjcl.encrypt(pw, secret).toString(),
         }),
         method: 'POST',
       });
@@ -77,11 +40,8 @@ const Create = () => {
       if (request.status !== 200) {
         setError(data.message);
       } else {
-        dispatch({
-          password: pw,
-          type: 'DISPLAY_RESULT',
-          uuid: data.message,
-        });
+        setUUID(data.message);
+        setPassword(pw);
       }
     } catch (e) {
       setError(e.message);
@@ -93,8 +53,8 @@ const Create = () => {
     <div>
       <h1>Encrypt message</h1>
       <Error message={error} onClick={() => setError('')} />
-      {state.uuid ? (
-        <Result uuid={state.uuid} password={state.password} />
+      {uuid ? (
+        <Result uuid={uuid} password={password} />
       ) : (
         <Form>
           <FormGroup>
@@ -105,10 +65,8 @@ const Create = () => {
               rows="4"
               autoFocus={true}
               placeholder="Message to encrypt locally in your browser"
-              onChange={e =>
-                dispatch({ type: 'SECRET_UPDATE', value: e.target.value })
-              }
-              value={state.secret}
+              onChange={e => setSecret(e.target.value)}
+              value={secret}
             />
           </FormGroup>
           <FormGroup tag="fieldset">
