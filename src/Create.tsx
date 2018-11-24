@@ -19,7 +19,9 @@ const Create = () => {
   const [loading, setLoading] = useState(false);
   const [uuid, setUUID] = useState('');
   const [password, setPassword] = useState('');
-  const BACKEND_DOMAIN = 'http://localhost:1337';
+  const BACKEND_DOMAIN = process.env.REACT_APP_BACKEND_URL
+    ? `${process.env.REACT_APP_BACKEND_URL}/secret`
+    : '/secret';
 
   const submit = async () => {
     if (secret === '') {
@@ -29,7 +31,7 @@ const Create = () => {
     setError('');
     try {
       const pw = randomString();
-      const request = await fetch(`${BACKEND_DOMAIN}/secret`, {
+      const request = await fetch(BACKEND_DOMAIN, {
         body: JSON.stringify({
           expiration: parseInt(expiration, 10),
           secret: sjcl.encrypt(pw, secret).toString(),
