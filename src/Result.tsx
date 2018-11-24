@@ -10,7 +10,7 @@ const Result = (
 ) => {
   const base = `${window.location.protocol}//${window.location.host}/#/s`;
   const short = `${base}/${props.uuid}`;
-  const full = `${base}/${props.password}`;
+  const full = `${short}/${props.password}`;
 
   return (
     <div>
