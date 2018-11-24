@@ -30,6 +30,7 @@ type Action =
 
 interface State {
   secret: string;
+  expiration: string;
   errorMessage: string;
   password: string;
   loading: boolean;
@@ -69,10 +70,10 @@ const reducer = (state: State, action: Action) => {
 };
 
 const Create = () => {
-  // const [secret, setSecret] = useState('');
   const [state, dispatch] = useReducer<State, Action>(reducer, {
     backendDomain: 'http://localhost:1337',
     errorMessage: '',
+    expiration: '3600',
     loading: false,
     password: '',
     secret: '',
@@ -83,13 +84,12 @@ const Create = () => {
     if (state.secret === '') {
       return;
     }
-    // Dispatch loading
     dispatch({ type: 'LOADING', isLoading: true });
     try {
       const pw = randomString();
       const request = await fetch(`${state.backendDomain}/secret`, {
         body: JSON.stringify({
-          expiration: parseInt('3600', 10),
+          expiration: parseInt(state.expiration, 10),
           secret: sjcl.encrypt(pw, state.secret).toString(),
         }),
         method: 'POST',
@@ -106,24 +106,6 @@ const Create = () => {
     dispatch({ type: 'LOADING', isLoading: false });
   };
 
-  const Form = () => {
-    return (
-      <div>
-        <Input
-          type="textarea"
-          name="secret"
-          onChange={e =>
-            dispatch({ type: 'SECRET_UPDATE', value: e.target.value })
-          }
-          value={state.secret}
-        />
-        <Button onClick={() => submit()} color="primary">
-          Encrypt Message
-        </Button>
-      </div>
-    );
-  };
-
   return (
     <div>
       <Error
@@ -134,7 +116,19 @@ const Create = () => {
       {state.uuid ? (
         <Result uuid={state.uuid} password={state.password} />
       ) : (
-        <Form />
+        <div>
+          <Input
+            type="textarea"
+            name="secret"
+            onChange={e =>
+              dispatch({ type: 'SECRET_UPDATE', value: e.target.value })
+            }
+            value={state.secret}
+          />
+          <Button onClick={() => submit()} color="primary">
+            Encrypt Message
+          </Button>
+        </div>
       )}
     </div>
   );
