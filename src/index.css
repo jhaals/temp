@@ -1,5 +1,18 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
+.margin {
+  margin-top: 20px;
+}
+
+.features {
+  margin-top: 40px;
+}
+
+pre {
+  background-color: #ecf0f1;
+  padding: 15px;
+  border: 1px solid #cccccc;
+  display: block;
+  font-size: 14px;
+  border-radius: 4px;
+  word-wrap: break-word;
+  word-break: break-all;
 }
