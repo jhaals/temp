@@ -1,8 +1,16 @@
 import * as React from 'react';
 // @ts-ignore
 import { Suspense } from 'react';
-import { useReducer } from 'react';
-import { Alert, Button, Input } from 'reactstrap';
+import { useReducer, useState } from 'react';
+import {
+  Alert,
+  Button,
+  Form,
+  FormGroup,
+  FormText,
+  Input,
+  Label,
+} from 'reactstrap';
 import * as sjcl from 'sjcl';
 import Result from './Result';
 
@@ -30,7 +38,6 @@ type Action =
 
 interface State {
   secret: string;
-  expiration: string;
   errorMessage: string;
   password: string;
   loading: boolean;
@@ -70,10 +77,10 @@ const reducer = (state: State, action: Action) => {
 };
 
 const Create = () => {
+  const [expiration, setExpiration] = useState('3600');
   const [state, dispatch] = useReducer<State, Action>(reducer, {
     backendDomain: 'http://localhost:1337',
     errorMessage: '',
-    expiration: '3600',
     loading: false,
     password: '',
     secret: '',
@@ -89,7 +96,7 @@ const Create = () => {
       const pw = randomString();
       const request = await fetch(`${state.backendDomain}/secret`, {
         body: JSON.stringify({
-          expiration: parseInt(state.expiration, 10),
+          expiration: parseInt(expiration, 10),
           secret: sjcl.encrypt(pw, state.secret).toString(),
         }),
         method: 'POST',
@@ -108,27 +115,85 @@ const Create = () => {
 
   return (
     <div>
+      <h1>Encrypt message</h1>
       <Error
         message={state.errorMessage}
         onClick={() => dispatch({ type: 'ERROR_CLEAR' })}
       />
-      <Loading show={state.loading} />
       {state.uuid ? (
         <Result uuid={state.uuid} password={state.password} />
       ) : (
-        <div>
-          <Input
-            type="textarea"
-            name="secret"
-            onChange={e =>
-              dispatch({ type: 'SECRET_UPDATE', value: e.target.value })
-            }
-            value={state.secret}
-          />
-          <Button onClick={() => submit()} color="primary">
-            Encrypt Message
+        <Form>
+          <FormGroup>
+            <Label for="exampleText">Secret message</Label>
+            <Input
+              type="textarea"
+              name="secret"
+              rows="4"
+              autoFocus={true}
+              placeholder="Message to encrypt locally in your browser"
+              onChange={e =>
+                dispatch({ type: 'SECRET_UPDATE', value: e.target.value })
+              }
+              value={state.secret}
+            />
+          </FormGroup>
+          <FormGroup tag="fieldset">
+            <Label>Lifetime</Label>
+            <FormText color="muted">
+              The encrypted message will be deleted automatically after
+            </FormText>
+            <FormGroup check={true}>
+              <Label check={true}>
+                <Input
+                  type="radio"
+                  name="1h"
+                  value="3600"
+                  onChange={e => setExpiration(e.target.value)}
+                  checked={expiration === '3600'}
+                />
+                One Hour
+              </Label>
+            </FormGroup>
+            <FormGroup check={true}>
+              <Label check={true}>
+                <Input
+                  type="radio"
+                  name="1d"
+                  value="86400"
+                  onChange={e => setExpiration(e.target.value)}
+                  checked={expiration === '86400'}
+                />
+                One Day
+              </Label>
+            </FormGroup>
+            <FormGroup check={true} disabled={true}>
+              <Label check={true}>
+                <Input
+                  type="radio"
+                  name="1w"
+                  value="604800"
+                  onChange={e => setExpiration(e.target.value)}
+                  checked={expiration === '604800'}
+                />
+                One Week
+              </Label>
+            </FormGroup>
+          </FormGroup>
+          <Button
+            disabled={state.loading}
+            color="primary"
+            size="lg"
+            block={true}
+            onClick={() => submit()}
+          >
+            {state.loading ? (
+              <span>Encrypting message...</span>
+            ) : (
+              <span>Encrypt Message</span>
+            )}
           </Button>
-        </div>
+        </Form>
       )}
     </div>
   );
@@ -142,10 +207,6 @@ const Error = (
       {props.message}
     </Alert>
   ) : null;
-
-const Loading = (
-  props: { readonly show: boolean } & React.HTMLAttributes<HTMLElement>,
-) => (props.show ? <h2>Loading</h2> : null);
 
 const randomString = () => {
   let text = '';
