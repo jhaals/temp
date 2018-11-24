@@ -20,17 +20,6 @@ type Action =
       value: string;
     }
   | {
-      type: 'ERROR_CLEAR';
-    }
-  | {
-      type: 'LOADING';
-      isLoading: boolean;
-    }
-  | {
-      type: 'ERROR_SET';
-      error: string;
-    }
-  | {
       type: 'DISPLAY_RESULT';
       uuid: string;
       password: string;
@@ -38,11 +27,8 @@ type Action =
 
 interface State {
   secret: string;
-  errorMessage: string;
   password: string;
-  loading: boolean;
   uuid: string;
-  backendDomain: string;
 }
 
 const reducer = (state: State, action: Action) => {
@@ -58,30 +44,15 @@ const reducer = (state: State, action: Action) => {
         password: action.password,
         uuid: action.uuid,
       };
-    case 'LOADING':
-      return {
-        ...state,
-        loading: action.isLoading,
-      };
-    case 'ERROR_CLEAR':
-      return {
-        ...state,
-        errorMessage: '',
-      };
-    case 'ERROR_SET':
-      return {
-        ...state,
-        errorMessage: action.error,
-      };
   }
 };
 
 const Create = () => {
   const [expiration, setExpiration] = useState('3600');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const BACKEND_DOMAIN = 'http://localhost:1337';
   const [state, dispatch] = useReducer<State, Action>(reducer, {
-    backendDomain: 'http://localhost:1337',
-    errorMessage: '',
-    loading: false,
     password: '',
     secret: '',
     uuid: '',
@@ -91,10 +62,11 @@ const Create = () => {
     if (state.secret === '') {
       return;
     }
-    dispatch({ type: 'LOADING', isLoading: true });
+    setLoading(true);
+    setError('');
     try {
       const pw = randomString();
-      const request = await fetch(`${state.backendDomain}/secret`, {
+      const request = await fetch(`${BACKEND_DOMAIN}/secret`, {
         body: JSON.stringify({
           expiration: parseInt(expiration, 10),
           secret: sjcl.encrypt(pw, state.secret).toString(),
@@ -102,24 +74,25 @@ const Create = () => {
         method: 'POST',
       });
       const data = await request.json();
-      dispatch({
-        password: pw,
-        type: 'DISPLAY_RESULT',
-        uuid: data.message,
-      });
+      if (request.status !== 200) {
+        setError(data.message);
+      } else {
+        dispatch({
+          password: pw,
+          type: 'DISPLAY_RESULT',
+          uuid: data.message,
+        });
+      }
     } catch (e) {
-      dispatch({ type: 'ERROR_SET', error: e.message });
+      setError(e.message);
     }
-    dispatch({ type: 'LOADING', isLoading: false });
+    setLoading(false);
   };
 
   return (
     <div>
       <h1>Encrypt message</h1>
-      <Error
-        message={state.errorMessage}
-        onClick={() => dispatch({ type: 'ERROR_CLEAR' })}
-      />
+      <Error message={error} onClick={() => setError('')} />
       {state.uuid ? (
         <Result uuid={state.uuid} password={state.password} />
       ) : (
@@ -181,13 +154,13 @@ const Create = () => {
             </FormGroup>
           </FormGroup>
           <Button
-            disabled={state.loading}
+            disabled={loading}
             color="primary"
             size="lg"
             block={true}
             onClick={() => submit()}
           >
-            {state.loading ? (
+            {loading ? (
               <span>Encrypting message...</span>
             ) : (
               <span>Encrypt Message</span>
