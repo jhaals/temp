@@ -4,6 +4,7 @@ import { Col, Container, Navbar, NavbarBrand, Row } from 'reactstrap';
 
 import './App.css';
 import Create from './Create';
+import DisplaySecret from './DisplaySecret';
 
 class App extends React.Component {
   public render() {
@@ -19,6 +20,12 @@ class App extends React.Component {
             <Row>
               <Col ml="auto">
                 <Route path="/" exact={true} component={Create} />
+                <Route
+                  exact={true}
+                  path="/s/:key/:password"
+                  component={DisplaySecret}
+                />
+                <Route exact={true} path="/s/:key" component={DisplaySecret} />
               </Col>
             </Row>
           </Container>
