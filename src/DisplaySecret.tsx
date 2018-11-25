@@ -1,15 +1,16 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+import { Redirect } from 'react-router-dom';
+import { Button, Col, FormGroup, Input, Label } from 'reactstrap';
 import * as sjcl from 'sjcl';
 
 const displaySecret = (props: any & React.HTMLAttributes<HTMLElement>) => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, showError] = useState(false);
   const [secret, setSecret] = useState('');
 
   const decrypt = async () => {
     setLoading(true);
-    // this.setState({ loading: true, displayForm: false });
     const url = process.env.REACT_APP_BACKEND_URL
       ? `${process.env.REACT_APP_BACKEND_URL}/secret`
       : '/secret';
@@ -30,15 +31,13 @@ const displaySecret = (props: any & React.HTMLAttributes<HTMLElement>) => {
 
   useEffect(
     () => {
-      if (!props.match.params.password) {
-        setLoading(false);
-        // this.setState({ displayForm: true, loading: false });
-      } else {
+      if (props.match.params.password) {
         decrypt();
       }
     },
     [props.match.params.password],
   );
+
   return (
     <div>
       {loading && (
@@ -48,8 +47,43 @@ const displaySecret = (props: any & React.HTMLAttributes<HTMLElement>) => {
       )}
       <Error display={error} />
       <Secret secret={secret} />
+      <Form
+        display={!props.match.params.password}
+        uuid={props.match.params.key}
+      />
     </div>
   );
+};
+
+const Form = (
+  props: {
+    readonly display: boolean;
+    readonly uuid: string;
+  } & React.HTMLAttributes<HTMLElement>,
+) => {
+  const [password, setPassword] = useState('');
+  const [redirect, setRedirect] = useState(false);
+
+  if (redirect) {
+    return <Redirect to={`/s/${props.uuid}/${password}`} />;
+  }
+  return props.display ? (
+    <Col sm="6">
+      <FormGroup>
+        <Label>A decryption key is required, please enter it below</Label>
+        <Input
+          type="text"
+          autoFocus={true}
+          placeholder="Decryption Key"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+        />
+      </FormGroup>
+      <Button block={true} size="lg" onClick={() => setRedirect(true)}>
+        Decrypt Secret
+      </Button>
+    </Col>
+  ) : null;
 };
 
 const Error = (
